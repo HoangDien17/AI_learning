@@ -1,15 +1,14 @@
 # AI Matchmaker
 
-AI-powered matchmaking backend that uses OpenAI embeddings and Qdrant vector search to recommend compatible romantic partners.
+AI-powered matchmaking backend that uses embeddings (OpenAI or local **all-MiniLM-L6-v2**) and Qdrant vector search to recommend compatible romantic partners.
 
 ## Architecture
 
 ```
 User → FastAPI → Profile Service → OpenAI (embedding) → Qdrant (vector store)
                                   → PostgreSQL (structured data)
-
-User → FastAPI → Matchmaking Agent → Qdrant (similarity search)
-                                    → Scoring Engine
+User → FastAPI → Matchmaking Agent → Stage 1: Qdrant (candidate generation)
+                                    → Stage 2: Ranking model (full scoring)
                                     → OpenAI (compatibility explanation)
 ```
 
@@ -18,7 +17,7 @@ User → FastAPI → Matchmaking Agent → Qdrant (similarity search)
 | Component      | Technology              |
 |----------------|-------------------------|
 | API            | FastAPI                 |
-| Embeddings     | OpenAI text-embedding-3-small |
+| Embeddings     | Local (sentence-transformers all-MiniLM-L6-v2) or OpenAI text-embedding-3-small |
 | Vector DB      | Qdrant                  |
 | Relational DB  | PostgreSQL              |
 | Orchestration  | Docker Compose          |
@@ -50,8 +49,11 @@ This starts PostgreSQL (port 5432) and Qdrant (port 6333).
 
 ```bash
 cp .env.example .env
-# Edit .env and set your OPENAI_API_KEY
+# For local embeddings (default): no API key needed. Set EMBEDDING_DIMENSIONS=384.
+# For OpenAI embeddings: set EMBEDDING_PROVIDER=openai, OPENAI_API_KEY, and EMBEDDING_DIMENSIONS=1536.
 ```
+
+If you switch embedding provider or dimensions, delete the Qdrant collection so it can be recreated with the correct vector size (e.g. in Qdrant UI or via API).
 
 ### 3. Install dependencies
 

@@ -43,7 +43,7 @@ class ProfileCreate(BaseModel):
     age: int = Field(..., ge=18, le=120)
     gender: str = Field(..., min_length=1, max_length=30)
     location: str = Field(..., min_length=1, max_length=200)
-    occupation: str = Field(..., max_length=200, default="")
+    occupation: str = Field(default="", max_length=200)
     interests: str = Field(..., description="Comma-separated list of interests")
     personality: str = Field(..., description="Short personality description")
     lifestyle: str = Field(default="", description="Lifestyle description")

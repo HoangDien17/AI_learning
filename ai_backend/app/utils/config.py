@@ -1,15 +1,20 @@
-from pydantic_settings import BaseSettings
 from functools import lru_cache
+from typing import Literal, Optional
+
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
     app_name: str = "AI Matchmaker"
     debug: bool = False
 
-    openai_api_key: str
+    # Embeddings & LLM
+    embedding_provider: Literal["local", "openai"] = "local"
+    embedding_dimensions: int = 384
+
+    openai_api_key: Optional[str] = None
     openai_embedding_model: str = "text-embedding-3-small"
     openai_chat_model: str = "gpt-4o-mini"
-    embedding_dimensions: int = 1536
 
     postgres_host: str = "localhost"
     postgres_port: int = 5432

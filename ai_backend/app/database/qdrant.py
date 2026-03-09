@@ -19,18 +19,45 @@ def get_qdrant() -> QdrantClient:
 def ensure_collection() -> None:
     settings = get_settings()
     client = get_qdrant()
+    expected_dim = settings.embedding_dimensions
+    coll_name = settings.qdrant_collection
     collections = [c.name for c in client.get_collections().collections]
-    if settings.qdrant_collection not in collections:
+
+    if coll_name not in collections:
         client.create_collection(
-            collection_name=settings.qdrant_collection,
+            collection_name=coll_name,
             vectors_config=VectorParams(
-                size=settings.embedding_dimensions,
+                size=expected_dim,
                 distance=Distance.COSINE,
             ),
         )
-        log.info("Created Qdrant collection '%s'", settings.qdrant_collection)
+        log.info("Created Qdrant collection '%s' (dim=%s)", coll_name, expected_dim)
+        return
+
+    # If collection exists, ensure vector size matches config (e.g. after switching embedding provider)
+    info = client.get_collection(coll_name)
+    try:
+        current_dim = info.config.params.vectors.size
+    except AttributeError:
+        current_dim = None
+    if current_dim is None or current_dim != expected_dim:
+        log.warning(
+            "Qdrant collection '%s' has vector size %s but config expects %s; recreating collection",
+            coll_name,
+            current_dim if current_dim is not None else "?",
+            expected_dim,
+        )
+        client.delete_collection(coll_name)
+        client.create_collection(
+            collection_name=coll_name,
+            vectors_config=VectorParams(
+                size=expected_dim,
+                distance=Distance.COSINE,
+            ),
+        )
+        log.info("Recreated Qdrant collection '%s' with dim=%s", coll_name, expected_dim)
     else:
-        log.info("Qdrant collection '%s' already exists", settings.qdrant_collection)
+        log.info("Qdrant collection '%s' already exists (dim=%s)", coll_name, expected_dim)
 
 
 def upsert_profile_vector(

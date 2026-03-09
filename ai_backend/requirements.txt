@@ -6,3 +6,4 @@ asyncpg
 qdrant-client
 openai
 python-dotenv
+sentence-transformers
